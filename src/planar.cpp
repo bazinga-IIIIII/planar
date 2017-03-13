@@ -9,11 +9,16 @@
 //#include <iostream>
 #include "common.h"
 #include "rgbdframe.h"
+#include <sys/time.h>
+
 
 #define DEPTH_HEIGHT 480
 #define DEPTH_WIDTH  640
 #define DEPTH_VISION_CENTER_X 320
 #define DEPTH_VISION_CENTER_Y 240
+const float DEPTH_VISION_Z_DATA2METER_P = 1.0;
+const double DEPTH_VISION_ZX_DATA2METER_P = 0.001512;
+const double DEPTH_VISION_ZY_DATA2METER_P = 0.001512;
 
 using namespace std;
 using namespace rgbd_tutor;
@@ -27,12 +32,16 @@ int main()
     RGBDFrame::Ptr old_frame(new RGBDFrame);
     CAMERA_INTRINSIC_PARAMETERS camera;
     camera = para.getCamera();
-    while( RGBDFrame::Ptr frame = fr.next())
-    {
-        imshow("rgb", frame->rgb);
-        imshow("depth", frame->depth);
-        cv::waitKey(1);
+//    while( RGBDFrame::Ptr frame = fr.next())
+//    {
+//        imshow("rgb", frame->rgb);
+//        imshow("depth", frame->depth);
+//        cv::waitKey(1);
 
+    struct timeval start, stop, diff;
+    gettimeofday(&start, 0);
+
+        Mat src = imread("d2.bmp");
         int i, j;
         //计算空间xyz
         vector<Vec3f> original_3D_point(DEPTH_WIDTH*DEPTH_HEIGHT);
@@ -41,12 +50,12 @@ int main()
             for (j = 0; j<DEPTH_HEIGHT; j++)
             {
                 float x, y, z;
-                y = double(frame->depth.ptr<ushort>(j)[i]) / camera.scale;
-                x = (i - camera.cx) * y / camera.fx;
-                z = (j - camera.cy) * y / camera.fy;
-                //y = frame->depth.at<Vec3b>(j, i)[0] + 256 * frame->depth.at<Vec3b>(j, i)[1] + 65536 * frame->depth.at<Vec3b>(j, i)[2];
-                //x = float(y * DEPTH_VISION_ZX_DATA2METER_P * (i - DEPTH_VISION_CENTER_X));
-                //z = float(y * DEPTH_VISION_ZY_DATA2METER_P * (j - DEPTH_VISION_CENTER_Y));
+                //y = double(frame->depth.ptr<ushort>(j)[i]) / camera.scale;
+                //x = (i - camera.cx) * y / camera.fx;
+                //z = (j - camera.cy) * y / camera.fy;
+                y = src.at<Vec3b>(j, i)[0] + 256 * src.at<Vec3b>(j, i)[1] + 65536 * src.at<Vec3b>(j, i)[2];
+                x = float(y * DEPTH_VISION_ZX_DATA2METER_P * (i - DEPTH_VISION_CENTER_X));
+                z = float(y * DEPTH_VISION_ZY_DATA2METER_P * (j - DEPTH_VISION_CENTER_Y));
                 original_3D_point[j*DEPTH_WIDTH + i] = Vec3f(x, y, z);
             }
         }
@@ -80,22 +89,22 @@ int main()
 
 
         //滤波
-        /*    	Mat a1 = Mat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32FC1);
-                for (i = 0; i<DEPTH_WIDTH; i++)
-                {
-                for (j = 0; j<DEPTH_HEIGHT; j++)
-                {
+        Mat a1 = Mat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32FC1);
+        for (i = 0; i<DEPTH_WIDTH; i++)
+        {
+        	for (j = 0; j<DEPTH_HEIGHT; j++)
+            {
                 a1.at<float>(j, i) = tan_vec_x[j*DEPTH_WIDTH + i](0);
-                }
-                }
-                GaussianBlur(a1, a1, Size(3, 3), 0, 0);
-                for (i = 0; i<DEPTH_WIDTH; i++)
-                {
-                for (j = 0; j<DEPTH_HEIGHT; j++)
-                {
+            }
+        }
+        GaussianBlur(a1, a1, Size(3, 3), 0, 0);
+        for (i = 0; i<DEPTH_WIDTH; i++)
+        {
+        	for (j = 0; j<DEPTH_HEIGHT; j++)
+            {
                 tan_vec_x[j*DEPTH_WIDTH + i](0) = a1.at<float>(j, i);
-                }
-                }*/
+            }
+        }
 
 
         //计算法线
@@ -126,6 +135,9 @@ int main()
                 //cout<<mold<<"  "<<nor_vec_n.at(pos)[0]<<"  "<<nor_vec_n.at(pos)[1]<<"  "<<nor_vec_n.at(pos)[2]<<endl;
             }
         }
+
+
+        gettimeofday(&diff, 0);
 
 
         //image segmentation and clustering
@@ -164,7 +176,7 @@ int main()
             image1.at<uchar>(j, i) = 255;
         }
         //namedWindow("image1");
-        //imshow("image1",image1);
+        imshow("image1",image1);
 
 
 
@@ -261,7 +273,17 @@ int main()
         //cvnamedWindow("image3");
         //imshow("image3",image3);
 
-    }
+        gettimeofday(&stop, 0);
+        //tim_subtract(&diff, &start, &stop);
+        cout << start.tv_sec << endl;
+        cout << start.tv_usec << endl;
+        cout << diff.tv_sec << endl;
+        cout << diff.tv_usec << endl;
+        cout << stop.tv_sec << endl;
+        cout << stop.tv_usec << endl;
+
+        waitKey(0);
+//    }
     cout << "end" << endl;
     return 0;
 }
