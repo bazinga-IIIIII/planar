@@ -32,16 +32,17 @@ int main()
     RGBDFrame::Ptr old_frame(new RGBDFrame);
     CAMERA_INTRINSIC_PARAMETERS camera;
     camera = para.getCamera();
-//    while( RGBDFrame::Ptr frame = fr.next())
-//    {
-//        imshow("rgb", frame->rgb);
-//        imshow("depth", frame->depth);
-//        cv::waitKey(1);
+    while( RGBDFrame::Ptr frame = fr.next())
+    {
+        imshow("rgb", frame->rgb);
+        imshow("depth", frame->depth);
+        cv::waitKey(1);
 
     struct timeval start, stop, diff;
     gettimeofday(&start, 0);
 
-        Mat src = imread("d2.bmp");
+//        Mat src = imread("d2.bmp");
+ //       Mat src = imread("1.png");
         int i, j;
         //计算空间xyz
         vector<Vec3f> original_3D_point(DEPTH_WIDTH*DEPTH_HEIGHT);
@@ -50,12 +51,13 @@ int main()
             for (j = 0; j<DEPTH_HEIGHT; j++)
             {
                 float x, y, z;
-                //y = double(frame->depth.ptr<ushort>(j)[i]) / camera.scale;
-                //x = (i - camera.cx) * y / camera.fx;
-                //z = (j - camera.cy) * y / camera.fy;
-                y = src.at<Vec3b>(j, i)[0] + 256 * src.at<Vec3b>(j, i)[1] + 65536 * src.at<Vec3b>(j, i)[2];
-                x = float(y * DEPTH_VISION_ZX_DATA2METER_P * (i - DEPTH_VISION_CENTER_X));
-                z = float(y * DEPTH_VISION_ZY_DATA2METER_P * (j - DEPTH_VISION_CENTER_Y));
+                y = double(frame->depth.ptr<ushort>(j)[i]) / camera.scale;
+                //y = double(src.ptr<ushort>(j)[i]) / camera.scale;
+                x = (i - camera.cx) * y / camera.fx;
+                z = (j - camera.cy) * y / camera.fy;
+                //y = src.at<Vec3b>(j, i)[0] + 256 * src.at<Vec3b>(j, i)[1] + 65536 * src.at<Vec3b>(j, i)[2];
+                //x = float(y * DEPTH_VISION_ZX_DATA2METER_P * (i - DEPTH_VISION_CENTER_X));
+                //z = float(y * DEPTH_VISION_ZY_DATA2METER_P * (j - DEPTH_VISION_CENTER_Y));
                 original_3D_point[j*DEPTH_WIDTH + i] = Vec3f(x, y, z);
             }
         }
@@ -147,7 +149,7 @@ int main()
         vector<float> z_buff;
         vector<int>::iterator iter;
         ////////////////////////////////////////////////////////////////////////////////////////////
-        float threshold1 = 0.85;
+        float threshold1 = 0.7;//0.85;
         ////////////////////////////////////////////////////////////////////////////////////////////
         int length = 0;
         j = 0;
@@ -282,8 +284,8 @@ int main()
         cout << stop.tv_sec << endl;
         cout << stop.tv_usec << endl;
 
-        waitKey(0);
-//    }
+        //waitKey(0);
+    }
     cout << "end" << endl;
     return 0;
 }
